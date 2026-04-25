@@ -37,6 +37,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Validate required configuration
+        id: config_check
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -50,14 +51,26 @@ jobs:
             fi
           done
           if [ "${#missing[@]}" -gt 0 ]; then
-            echo "::error::Missing required GitHub Actions secrets: ${missing[*]}"
-            exit 1
+            echo "::warning::Missing required GitHub Actions secrets: ${missing[*]}"
+            {
+              echo "ready=false"
+              echo "missing=${missing[*]}"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Run NEC daily research
+        if: steps.config_check.outputs.ready == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
           NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
           OPENAI_MODEL: ${{ vars.OPENAI_MODEL }}
         run: python -u main.py
+
+      - name: Report skipped run
+        if: steps.config_check.outputs.ready != 'true'
+        run: |
+          echo "NEC daily research was skipped because required GitHub Actions secrets are missing."
+          echo "Missing: ${{ steps.config_check.outputs.missing }}"

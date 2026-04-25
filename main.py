@@ -20,12 +20,12 @@ REQUIRED_NOTION_PROPERTIES = {
     "タイトル": "title",
     "日付": "date",
     "企業": "rich_text",
-    "カテゴリ": "select",
+    "カテゴリ": "multi_select",
     "要約": "rich_text",
     "重要ポイント": "rich_text",
     "自分への示唆": "rich_text",
     "URL": "url",
-    "信頼度": "select",
+    "信頼度": "multi_select",
 }
 
 
@@ -327,12 +327,12 @@ def validate_required_properties(data_source: dict):
         get_property_schema(data_source, property_name, expected_type)
 
 
-def get_select_option_names(data_source: dict, property_name: str) -> list[str]:
-    prop = get_property_schema(data_source, property_name, "select")
-    options = [option["name"] for option in prop["select"].get("options", [])]
+def get_multi_select_option_names(data_source: dict, property_name: str) -> list[str]:
+    prop = get_property_schema(data_source, property_name, "multi_select")
+    options = [option["name"] for option in prop["multi_select"].get("options", [])]
     if not options:
         raise RuntimeError(
-            f"Notion select プロパティ '{property_name}' に選択肢がありません。"
+            f"Notion multi_select プロパティ '{property_name}' に選択肢がありません。"
         )
     return options
 
@@ -393,7 +393,7 @@ def create_notion_page(data_source_id: str, notion_token: str, item: dict):
                 "rich_text": rich_text("NEC")
             },
             "カテゴリ": {
-                "select": {"name": item.get("category", "その他")}
+                "multi_select": [{"name": item.get("category", "その他")}]
             },
             "要約": {
                 "rich_text": rich_text(item.get("summary", ""))
@@ -408,7 +408,7 @@ def create_notion_page(data_source_id: str, notion_token: str, item: dict):
                 "url": item.get("url", None)
             },
             "信頼度": {
-                "select": {"name": item.get("confidence", "要確認")}
+                "multi_select": [{"name": item.get("confidence", "要確認")}]
             },
         },
         "children": [
@@ -421,7 +421,7 @@ def create_notion_page(data_source_id: str, notion_token: str, item: dict):
             heading("情報源"),
             paragraph(f"公開日: {item.get('published', '不明')}"),
             paragraph(f"URL: {item.get('url', '')}"),
-        ]
+        ],
     }
 
     res = requests.post(
@@ -446,8 +446,8 @@ def main():
         settings.notion_token,
     )
     validate_required_properties(data_source)
-    category_options = get_select_option_names(data_source, "カテゴリ")
-    confidence_options = get_select_option_names(data_source, "信頼度")
+    category_options = get_multi_select_option_names(data_source, "カテゴリ")
+    confidence_options = get_multi_select_option_names(data_source, "信頼度")
     items = summarize_candidates(
         candidates,
         client,
