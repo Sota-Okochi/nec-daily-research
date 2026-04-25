@@ -1,6 +1,9 @@
 name: Daily NEC Research
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # JST 07:30 = UTC 22:30
     - cron: "30 22 * * *"
