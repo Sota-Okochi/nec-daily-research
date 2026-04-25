@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 
 
-NOTION_VERSION = "2026-03-11"
+NOTION_VERSION = "2025-09-03"
 DEFAULT_OPENAI_MODEL = "gpt-5.5"
 JST = ZoneInfo("Asia/Tokyo")
 
